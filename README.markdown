@@ -4,6 +4,13 @@ Connect suppliers (ie. farmers), distributors (ie. co-ops) and
 consumers (ie. local food lovers) for the sale and purchase of local
 produce.
 
+## Contributing
+
+If you're interesting in helping out, check out the wiki for more information about the project.
+
+We are using Pivotal Tracker to develop features and you can see (and join in on) what's coming up next at https://www.pivotaltracker.com/projects/709913#
+
+We welcome issues and bugs filed and dealt with on GitHub as well - we'll move them into Pivotal for the core development team as required :)
 
 ## Dependencies
 
@@ -85,4 +92,4 @@ speak to Andrew Spinks.
 
 ## Licence
 
-Copyright (c) 2012 Eaterprises, released under the AGPL licence.
+Copyright (c) 2012 Open Food Web Foundation, released under the AGPL licence.
