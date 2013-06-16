@@ -90,12 +90,62 @@ productsApp.controller('AdminBulkProductsCtrl', function($scope, $timeout, $http
 
 	$scope.refreshProducts = function(){
 		dataFetcher('/admin/products/bulk_index.json').then(function(data){
-			$scope.products = angular.copy(data);
+			$scope.products = toObjectWithIDKeys(data);
 		});
 	};
 
 	$scope.updateOnHand = function(product){
 		product.on_hand = onHand(product);
+	}
+
+	$scope.editWarn = function(product,variant){
+		if ( ( $scope.dirtyProductCount() > 0 && confirm("Unsaved changes will be lost. Continue anyway?") ) || ( $scope.dirtyProductCount() == 0 ) ){
+			window.location = "/admin/products/"+product.permalink_live+(variant ? "/variants/"+variant.id : "")+"/edit";
+		}
+	}
+
+	$scope.deleteProduct = function(product){
+		if (confirm("Are you sure?")){
+			$http({
+				method: 'DELETE',
+				url: '/admin/products/'+product.permalink_live+".js"
+			})
+			.success(function(data){
+				delete $scope.products[product.id]
+				if ($scope.dirtyProducts.hasOwnProperty(product.id)) delete $scope.dirtyProducts[product.id]
+			})
+		}
+	}
+
+	$scope.deleteVariant = function(product,variant){
+		if (confirm("Are you sure?")){
+			$http({
+				method: 'DELETE',
+				url: '/admin/products/'+product.permalink_live+"/variants/"+variant.id+".js"
+			})
+			.success(function(data){
+				delete $scope.products[product.id].variants[variant.id]
+				if ($scope.dirtyProducts.hasOwnProperty(product.id) && $scope.dirtyProducts[product.id].hasOwnProperty("variants") && $scope.dirtyProducts[product.id].variants.hasOwnProperty(variant.id)) delete $scope.dirtyProducts[product.id].variants[variant.id]
+			})
+		}
+	}
+
+	$scope.cloneProduct = function(product){
+		dataFetcher("/admin/products/"+product.permalink_live+"/clone.json").then(function(data){
+			// Ideally we would use Spree's built in respond_override helper here to redirect the user after a successful clone with .json in the accept headers
+			// However, at the time of writing there appears to be an issue which causes the respond_with block in the destroy action of Spree::Admin::Product to break
+			// when a respond_overrride for the clone action is used.
+			var id = data.product.id;
+			dataFetcher("/admin/products/bulk_index.json?q[id_eq]="+id).then(function(data){
+				var newProduct = data[0];
+				newProduct.variants = toObjectWithIDKeys(newProduct.variants)
+				$scope.products[newProduct.id] = newProduct;
+			});
+		});
+	}
+
+	$scope.hasVariants = function(product){
+		return Object.keys(product.variants).length > 0;
 	}
 
 	$scope.updateProducts = function(productsToSubmit){
@@ -106,9 +156,10 @@ productsApp.controller('AdminBulkProductsCtrl', function($scope, $timeout, $http
 			data: productsToSubmit
 		})
 		.success(function(data){
+			data = toObjectWithIDKeys(data);
 			if (angular.toJson($scope.products) == angular.toJson(data)){
-				$scope.products = angular.copy(data);
-				$scope.cleanProducts = angular.copy(data);
+				$scope.products = data;
+				$scope.dirtyProducts = {};
 				$scope.displaySuccess();
 			}
 			else{
@@ -146,9 +197,12 @@ productsApp.controller('AdminBulkProductsCtrl', function($scope, $timeout, $http
 	}
 
 	$scope.displayDirtyProducts = function(){
-		var changedProductCount = Object.keys($scope.dirtyProducts).length;
-		if (changedProductCount > 0) $scope.setMessage($scope.updateStatusMessage,"Changes to "+Object.keys($scope.dirtyProducts).length+" products remain unsaved.",{ color: "gray" },false);
+		if ($scope.dirtyProductCount() > 0) $scope.setMessage($scope.updateStatusMessage,"Changes to "+$scope.dirtyProductCount()+" products remain unsaved.",{ color: "gray" },false);
 		else $scope.setMessage($scope.updateStatusMessage,"",{},false);
+	}
+
+	$scope.dirtyProductCount = function(){
+		return Object.keys($scope.dirtyProducts).length;
 	}
 });
 
@@ -166,7 +220,7 @@ productsApp.factory('dataFetcher', function($http,$q){
 
 function onHand(product){
 	var onHand = 0;
-	if(product.hasOwnProperty('variants') && product.variants instanceof Array){
+	if(product.hasOwnProperty('variants') && product.variants instanceof Object){
 		angular.forEach(product.variants, function(variant) {
 			onHand = parseInt( onHand ) + parseInt( variant.on_hand > 0 ? variant.on_hand : 0 );
 		});
@@ -181,37 +235,36 @@ function filterSubmitProducts(productsToFilter){
 	var filteredProducts= [];
 
 	if (productsToFilter instanceof Object){
-		var productKeys = Object.keys(productsToFilter);
-		for (i in productKeys) {
-			if (productsToFilter[productKeys[i]].hasOwnProperty("id")){
+		angular.forEach(productsToFilter, function(product){
+			if (product.hasOwnProperty("id")){
 				var filteredProduct = {};
 				var filteredVariants = [];
 
-				if (productsToFilter[productKeys[i]].hasOwnProperty("variants")){
-					var variantKeys = Object.keys(productsToFilter[productKeys[i]].variants);
-					for (j in variantKeys){
-						if (productsToFilter[productKeys[i]].variants[variantKeys[j]].deleted_at == null && productsToFilter[productKeys[i]].variants[variantKeys[j]].hasOwnProperty("id")){
-							filteredVariants[j] = {};
-							filteredVariants[j].id = productsToFilter[productKeys[i]].variants[variantKeys[j]].id;
-							if (productsToFilter[productKeys[i]].variants[variantKeys[j]].hasOwnProperty("on_hand")) filteredVariants[j].on_hand = productsToFilter[productKeys[i]].variants[variantKeys[j]].on_hand;
-							if (productsToFilter[productKeys[i]].variants[variantKeys[j]].hasOwnProperty("price")) filteredVariants[j].price = productsToFilter[productKeys[i]].variants[variantKeys[j]].price;
+				if (product.hasOwnProperty("variants")){
+					angular.forEach(product.variants, function(variant){
+						if (variant.deleted_at == null && variant.hasOwnProperty("id")){
+							var hasUpdateableProperty = false;
+							var filteredVariant = {};
+							filteredVariant.id = variant.id;
+							if (variant.hasOwnProperty("on_hand")) { filteredVariant.on_hand = variant.on_hand; hasUpdatableProperty = true; }
+							if (variant.hasOwnProperty("price")) { filteredVariant.price = variant.price; hasUpdatableProperty = true; }
+							if (hasUpdatableProperty) filteredVariants.push(filteredVariant);
 						}
-					}
+					});
 				}
 
 				var hasUpdatableProperty = false;
-				filteredProduct.id = productsToFilter[productKeys[i]].id;
-				if (productsToFilter[productKeys[i]].hasOwnProperty("name")) { filteredProduct.name = productsToFilter[productKeys[i]].name; hasUpdatableProperty = true; }
-				if (productsToFilter[productKeys[i]].hasOwnProperty("supplier_id")) { filteredProduct.supplier_id = productsToFilter[productKeys[i]].supplier_id; hasUpdatableProperty = true; }
-				//if (productsToFilter[productKeys[i]].hasOwnProperty("master")) filteredProduct.master_attributes = productsToFilter[productKeys[i]].master
-				if (productsToFilter[productKeys[i]].hasOwnProperty("price")) { filteredProduct.price = productsToFilter[productKeys[i]].price; hasUpdatableProperty = true; }
-				if (productsToFilter[productKeys[i]].hasOwnProperty("on_hand") && filteredVariants.length == 0) { filteredProduct.on_hand = productsToFilter[productKeys[i]].on_hand; hasUpdatableProperty = true; } //only update if no variants present
-				if (productsToFilter[productKeys[i]].hasOwnProperty("available_on")) { filteredProduct.available_on = productsToFilter[productKeys[i]].available_on; hasUpdatableProperty = true; }
+				filteredProduct.id = product.id;
+				if (product.hasOwnProperty("name")) { filteredProduct.name = product.name; hasUpdatableProperty = true; }
+				if (product.hasOwnProperty("supplier_id")) { filteredProduct.supplier_id = product.supplier_id; hasUpdatableProperty = true; }
+				if (product.hasOwnProperty("price")) { filteredProduct.price = product.price; hasUpdatableProperty = true; }
+				if (product.hasOwnProperty("on_hand") && filteredVariants.length == 0) { filteredProduct.on_hand = product.on_hand; hasUpdatableProperty = true; } //only update if no variants present
+				if (product.hasOwnProperty("available_on")) { filteredProduct.available_on = product.available_on; hasUpdatableProperty = true; }
 				if (filteredVariants.length > 0) { filteredProduct.variants_attributes = filteredVariants; hasUpdatableProperty = true; } // Note that the name of the property changes to enable mass assignment of variants attributes with rails
 
 				if (hasUpdatableProperty) filteredProducts.push(filteredProduct);
 			}
-		}
+		});
 	}
 	return filteredProducts;
 }
@@ -229,5 +282,20 @@ function addDirtyProperty(dirtyObjects, objectID, propertyName, propertyValue){
 
 function removeCleanProperty(dirtyObjects, objectID, propertyName){
 	if (dirtyObjects.hasOwnProperty(objectID) && dirtyObjects[objectID].hasOwnProperty(propertyName)) delete dirtyObjects[objectID][propertyName];
-	if (dirtyObjects.hasOwnProperty(objectID) && Object.keys(dirtyObjects[objectID]).length <= 1)	delete dirtyObjects[objectID];
+	if (dirtyObjects.hasOwnProperty(objectID) && Object.keys(dirtyObjects[objectID]).length <= 1) delete dirtyObjects[objectID];
+}
+
+function toObjectWithIDKeys(array){
+	var object = {};
+	//if (array instanceof Array){
+		for (i in array){
+			if (array[i] instanceof Object && array[i].hasOwnProperty("id")){
+				object[array[i].id] = angular.copy(array[i]);
+				if (array[i].hasOwnProperty("variants") && array[i].variants instanceof Array){
+					object[array[i].id].variants = toObjectWithIDKeys(array[i].variants);
+				}
+			}
+		}
+	//}
+	return object;
 }

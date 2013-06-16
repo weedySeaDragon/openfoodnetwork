@@ -275,4 +275,100 @@ feature %q{
     click_button 'Update'
     page.find("span#update-status-message").should have_content "Update complete"
   end
+
+  describe "using action buttons" do
+    describe "using delete buttons" do
+      it "shows a delete button for products, which deletes the appropriate product when clicked" do
+        p1 = FactoryGirl.create(:product)
+        p2 = FactoryGirl.create(:product)
+        p3 = FactoryGirl.create(:product)
+        login_to_admin_section
+
+        visit '/admin/products/bulk_index'
+
+        page.should have_selector "a.delete-product", :count => 3
+
+        first("a.delete-product").click
+        page.driver.browser.switch_to.alert.accept
+
+        page.should have_selector "a.delete-product", :count => 2
+        #page.should have_selector "div.flash.notice", text: "Product has been deleted."
+
+        visit '/admin/products/bulk_index'
+
+        page.should have_selector "a.delete-product", :count => 2
+      end
+
+      it "shows a delete button for variants, which deletes the appropriate variant when clicked" do
+        v1 = FactoryGirl.create(:variant)
+        v2 = FactoryGirl.create(:variant)
+        v3 = FactoryGirl.create(:variant)
+        login_to_admin_section
+
+        visit '/admin/products/bulk_index'
+
+        page.should have_selector "a.delete-variant", :count => 3
+
+        first("a.delete-variant").click
+        page.driver.browser.switch_to.alert.accept
+
+        page.should have_selector "a.delete-variant", :count => 2
+        #page.should have_selector "div.flash.notice", text: "Product has been deleted."
+
+        visit '/admin/products/bulk_index'
+
+        page.should have_selector "a.delete-variant", :count => 2
+      end
+    end
+
+    describe "using edit buttons" do
+      it "shows an edit button for products, which takes the user to the standard edit page for that product" do
+        p1 = FactoryGirl.create(:product)
+        p2 = FactoryGirl.create(:product)
+        p3 = FactoryGirl.create(:product)
+        login_to_admin_section
+
+        visit '/admin/products/bulk_index'
+
+        page.should have_selector "a.edit-product", :count => 3
+
+        first("a.edit-product").click
+
+        URI.parse(current_url).path.should == "/admin/products/#{p1.permalink}/edit"
+      end
+
+      it "shows an edit button for variants, which takes the user to the standard edit page for that variant" do
+        v1 = FactoryGirl.create(:variant)
+        v2 = FactoryGirl.create(:variant)
+        v3 = FactoryGirl.create(:variant)
+        login_to_admin_section
+
+        visit '/admin/products/bulk_index'
+
+        page.should have_selector "a.edit-variant", :count => 3
+
+        first("a.edit-variant").click
+
+        URI.parse(current_url).path.should == "/admin/products/#{v1.product.permalink}/variants/#{v1.id}/edit"
+      end
+    end
+
+    describe "using clone buttons" do
+      it "shows a clone button for products, which duplicates the product and adds it to the page when clicked" do
+        p1 = FactoryGirl.create(:product, :name => "P1")
+        p2 = FactoryGirl.create(:product, :name => "P2")
+        p3 = FactoryGirl.create(:product, :name => "P3")
+        login_to_admin_section
+
+        visit '/admin/products/bulk_index'
+
+        page.should have_selector "a.clone-product", :count => 3
+
+        first("a.clone-product").click
+
+        page.should have_selector "a.clone-product", :count => 4
+        page.should have_field "product_name", with: "COPY OF #{p1.name}"
+      end
+    end
+  end
 end 
