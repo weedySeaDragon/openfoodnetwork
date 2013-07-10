@@ -241,6 +241,7 @@ GEM
     multi_json (1.7.7)
     multi_xml (0.5.4)
     nokogiri (1.5.10)
+    oj (2.1.2)
     orm_adapter (0.4.0)
     paperclip (2.8.0)
       activerecord (>= 2.3.0)
@@ -389,9 +390,11 @@ DEPENDENCIES
   haml
   jquery-rails
   letter_opener
+  oj
   pg
   pry-debugger
   rails (= 3.2.13)
+  rabl
   representative_view
   rspec-rails
   sass-rails (~> 3.2.3)
