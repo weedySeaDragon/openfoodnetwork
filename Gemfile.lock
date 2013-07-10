@@ -393,8 +393,8 @@ DEPENDENCIES
   oj
   pg
   pry-debugger
-  rails (= 3.2.13)
   rabl
+  rails (= 3.2.13)
   representative_view
   rspec-rails
   sass-rails (~> 3.2.3)
