@@ -147,6 +147,9 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 		available_on: { name: 'Available On', visible: true }
 	}
 
+	$scope.perPage = 25;
+	$scope.currentPage = 1;
+
 	$scope.initialise = function(spree_api_key){
 		var authorise_api_reponse = "";
 		dataFetcher('/api/users/authorise_api?token='+spree_api_key).then(function(data){
@@ -159,6 +162,7 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 					// Need to have suppliers before we get products so we can match suppliers to product.supplier
 					dataFetcher('/api/products/managed?template=bulk_index').then(function(data){
 						$scope.resetProducts(data);
+						$scope.paginate();
 					});
 				});
 			}
@@ -168,7 +172,10 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 	};
 
 	$scope.resetProducts = function(data){
-		$scope.products = data;
+		$scope.products = data["products"];
+		$scope.currentCount = data["count"];
+		$scope.totalCount = data["total_count"];
+		$scope.totalPages = Math.ceil($scope.totalCount/$scope.perPage);
 		$scope.dirtyProducts = {};
 		$scope.displayProperties = $scope.displayProperties || {};
 		angular.forEach($scope.products,function(product){
@@ -311,6 +318,15 @@ productsApp.factory('dataFetcher', ["$http", "$q", function($http,$q){
 		return deferred.promise;
 	};
 }]);
+
+productsApp.filter('pageFilter', function(){
+	return function(input,currentPage,totalPages){
+		for (var i=Math.max(1,currentPage-2);i<=Math.min(totalPages,Math.max(5,currentPage+2));i++){
+			input.push(i);
+		}
+		return input;
+	};
+});
 
 function onHand(product){
 	var onHand = 0;
