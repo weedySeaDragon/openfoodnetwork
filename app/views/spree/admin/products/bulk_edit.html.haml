@@ -30,22 +30,22 @@
     %div
       %select{ 'ng-model' => 'perPage', :name => 'perPage', 'ng-options' => 'pp in [25,50,100,200]'}
       %br
-    %span Displaying {{currentCount}} of {{totalCount}} products
+    %span Displaying {{currentCount}} of {{totalCount}} products on {{currentPage}}
     %nav.pagination
       %span.next
-        %a{ 'ng-click' => 'currentPage = currentPage + 1', 'ng-show' => 'currentPage > 1' }
+        %a{ 'ng-click' => 'currentPage = 1', 'ng-show' => "{currentPage > 0}" }
           &laquo; First
       %span.next
-        %a{ 'ng-click' => 'currentPage = totalPages', 'ng-show' => 'currentPage > 1' }
+        %a{ 'ng-click' => 'currentPage = currentPage - 1', 'ng-show' => "{currentPage > 0}" }
           &lsaquo; Prev
       %span.page{ 'ng-repeat' => "page in [] | pageFilter:currentPage:totalPages", 'ng-class' => "{current: currentPage==page}" }
         %a{ 'ng-click' => 'currentPage = page' }
-          {{page}} {{currentPage}}
+          {{page}}
       %span.next
-        %a{ 'ng-click' => 'currentPage = currentPage + 1', 'ng-show' => 'currentPage < totalPages' }
+        %a{ 'ng-click' => 'currentPage = currentPage + 1', 'ng-show' => "{currentPage < totalPages}" }
           Next &rsaquo;
       %span.next
-        %a{ 'ng-click' => 'currentPage = totalPages', 'ng-show' => 'currentPage < totalPages' }
+        %a{ 'ng-click' => 'currentPage = totalPages', 'ng-show' => "{currentPage < totalPages}" }
           Last &raquo;
     %table.index#listing_products
       %thead
@@ -57,10 +57,8 @@
           %th{ 'ng-show' => 'columns.on_hand.visible' } On Hand
           %th{ 'ng-show' => 'columns.available_on.visible' } Av. On
           %th.actions
-      %tbody{ 'ng-repeat' => 'product in products | filter:query', 'ng-class-even' => "'even'", 'ng-class-odd' => "'odd'", 'ng-show' => '$index >= perPage*(currentPage-1) && $index < perPage*currentPage' }
+      %tbody{ 'ng-repeat' => 'product in products | filter:query', 'ng-class-even' => "'even'", 'ng-class-odd' => "'odd'", 'ng-show' => "$index >= perPage*(currentPage-1) && $index < perPage*currentPage" }
         %tr.product
-          %td
-            {{currentPage}}
           %td.left-actions
             %a{ 'ng-toggle-variants' => 'true', :class => "view-variants icon-chevron-right", 'ng-show' => 'hasVariants(product)' }
           %td{ 'ng-show' => 'columns.name.visible' }
