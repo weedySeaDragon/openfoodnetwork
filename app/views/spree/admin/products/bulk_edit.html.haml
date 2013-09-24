@@ -28,24 +28,24 @@
     %br.clear
     %br.clear
     %div
-      %select{ 'ng-model' => 'perPage', :name => 'perPage', 'ng-options' => 'pp in [25,50,100,200]'}
+      %select{ 'ng-model' => 'perPage', :name => 'perPage', 'ng-options' => 'pp for pp in [25,50,100,200]'}
       %br
-    %span Displaying {{currentCount}} of {{totalCount}} products on {{currentPage}}
+    %span Displaying {{firstVisibleProduct()}}-{{lastVisibleProduct()}} of {{totalCount}} products on page {{currentPage}}
     %nav.pagination
       %span.next
-        %a{ 'ng-click' => 'currentPage = 1', 'ng-show' => "{currentPage > 0}" }
+        %a{ 'ng-click' => "currentPage = 1", 'ng-show' => "currentPage > 1" }
           &laquo; First
       %span.next
-        %a{ 'ng-click' => 'currentPage = currentPage - 1', 'ng-show' => "{currentPage > 0}" }
+        %a{ 'ng-click' => "currentPage = currentPage - 1", 'ng-show' => "currentPage > 1" }
           &lsaquo; Prev
-      %span.page{ 'ng-repeat' => "page in [] | pageFilter:currentPage:totalPages", 'ng-class' => "{current: currentPage==page}" }
-        %a{ 'ng-click' => 'currentPage = page' }
+      %span.page{ 'ng-repeat' => "page in [] | pageFilter:currentPage:totalPages()", 'ng-class' => "{current: currentPage==page}" }
+        %a{ 'ng-click' => "currentPage = page" }
           {{page}}
       %span.next
-        %a{ 'ng-click' => 'currentPage = currentPage + 1', 'ng-show' => "{currentPage < totalPages}" }
+        %a{ 'ng-click' => "currentPage = currentPage + 1", 'ng-show' => "currentPage < totalPages()" }
           Next &rsaquo;
       %span.next
-        %a{ 'ng-click' => 'currentPage = totalPages', 'ng-show' => "{currentPage < totalPages}" }
+        %a{ 'ng-click' => "currentPage = totalPages()", 'ng-show' => "currentPage < totalPages()" }
           Last &raquo;
     %table.index#listing_products
       %thead

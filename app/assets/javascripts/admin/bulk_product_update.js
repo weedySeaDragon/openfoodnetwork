@@ -149,6 +149,10 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 
 	$scope.perPage = 25;
 	$scope.currentPage = 1;
+	$scope.totalCount = 0;
+	$scope.totalPages = function(){ return Math.ceil($scope.totalCount/$scope.perPage); };
+	$scope.firstVisibleProduct = function(){ return ($scope.currentPage-1)*$scope.perPage+1; };
+	$scope.lastVisibleProduct = function(){ return Math.min($scope.totalCount,$scope.currentPage*$scope.perPage); };
 
 	$scope.initialise = function(spree_api_key){
 		var authorise_api_reponse = "";
@@ -162,7 +166,6 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 					// Need to have suppliers before we get products so we can match suppliers to product.supplier
 					dataFetcher('/api/products/managed?template=bulk_index;page=1;per_page=500').then(function(data){
 						$scope.resetProducts(data);
-						$scope.paginate();
 					});
 				});
 			}
@@ -175,7 +178,6 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 		$scope.products = data["products"];
 		$scope.currentCount = data["count"];
 		$scope.totalCount = data["total_count"];
-		$scope.totalPages = Math.ceil($scope.totalCount/$scope.perPage);
 		$scope.dirtyProducts = {};
 		$scope.displayProperties = $scope.displayProperties || {};
 		angular.forEach($scope.products,function(product){
@@ -320,7 +322,7 @@ productsApp.factory('dataFetcher', ["$http", "$q", function($http,$q){
 }]);
 
 productsApp.filter('pageFilter', function(){
-	return function(input,currentPage,totalPages){
+	return function(input, currentPage, totalPages) {
 		for (var i=Math.max(1,currentPage-2);i<=Math.min(totalPages,Math.max(5,currentPage+2));i++){
 			input.push(i);
 		}
