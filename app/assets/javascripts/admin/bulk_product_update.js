@@ -133,6 +133,7 @@ productsApp.directive('datetimepicker', ["$parse", function ($parse) {
 		}
 	}
 }]);
+
 productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", "dataFetcher", function($scope, $timeout, $http, dataFetcher) {
 	$scope.updateStatusMessage = {
 		text: "",
@@ -153,6 +154,17 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 	$scope.totalPages = function(){ return Math.ceil($scope.totalCount/$scope.perPage); };
 	$scope.firstVisibleProduct = function(){ return ($scope.currentPage-1)*$scope.perPage+1; };
 	$scope.lastVisibleProduct = function(){ return Math.min($scope.totalCount,$scope.currentPage*$scope.perPage); };
+	$scope.setPage = function(page){
+		$scope.currentPage = page;
+	};
+
+	$scope.minPage = function(){
+		return Math.max(1,Math.min($scope.totalPages()-4,$scope.currentPage-2));
+	}
+
+	$scope.maxPage = function(){
+		return Math.min($scope.totalPages(),Math.max(5,$scope.currentPage+2));
+	}
 
 	$scope.initialise = function(spree_api_key){
 		var authorise_api_reponse = "";
@@ -321,9 +333,9 @@ productsApp.factory('dataFetcher', ["$http", "$q", function($http,$q){
 	};
 }]);
 
-productsApp.filter('pageFilter', function(){
-	return function(input, currentPage, totalPages) {
-		for (var i=Math.max(1,currentPage-2);i<=Math.min(totalPages,Math.max(5,currentPage+2));i++){
+productsApp.filter('rangeArray', function(){
+	return function(input,start,end) {
+		for (var i=start;i<=end;i++){
 			input.push(i);
 		}
 		return input;
