@@ -150,10 +150,11 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 
 	$scope.perPage = 25;
 	$scope.currentPage = 1;
-	$scope.totalCount = 0;
-	$scope.totalPages = function(){ return Math.ceil($scope.totalCount/$scope.perPage); };
+	$scope.filteredProducts = [];
+	$scope.totalCount = function(){ return $scope.filteredProducts.length };
+	$scope.totalPages = function(){ return Math.ceil($scope.totalCount()/$scope.perPage); };
 	$scope.firstVisibleProduct = function(){ return ($scope.currentPage-1)*$scope.perPage+1; };
-	$scope.lastVisibleProduct = function(){ return Math.min($scope.totalCount,$scope.currentPage*$scope.perPage); };
+	$scope.lastVisibleProduct = function(){ return Math.min($scope.totalCount(),$scope.currentPage*$scope.perPage); };
 	$scope.setPage = function(page){
 		$scope.currentPage = page;
 	};
@@ -188,8 +189,7 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 
 	$scope.resetProducts = function(data){
 		$scope.products = data["products"];
-		$scope.currentCount = data["count"];
-		$scope.totalCount = data["total_count"];
+		$scope.totalAvailable = data["total_count"]
 		$scope.dirtyProducts = {};
 		$scope.displayProperties = $scope.displayProperties || {};
 		angular.forEach($scope.products,function(product){
