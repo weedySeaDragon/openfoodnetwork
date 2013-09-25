@@ -150,6 +150,7 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 
 	$scope.perPage = 25;
 	$scope.currentPage = 1;
+	$scope.products = [];
 	$scope.filteredProducts = [];
 	$scope.totalCount = function(){ return $scope.filteredProducts.length };
 	$scope.totalPages = function(){ return Math.ceil($scope.totalCount()/$scope.perPage); };
@@ -177,7 +178,7 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 				dataFetcher('/api/enterprises/managed?template=bulk_index&q[is_primary_producer_eq]=true').then(function(data){
 					$scope.suppliers = data;
 					// Need to have suppliers before we get products so we can match suppliers to product.supplier
-					dataFetcher('/api/products/managed?template=bulk_index;page=1;per_page=500').then(function(data){
+					dataFetcher('/api/products/managed?template=bulk_index;page=1;per_page=200').then(function(data){
 						$scope.resetProducts(data);
 					});
 				});
@@ -272,7 +273,7 @@ productsApp.controller('AdminBulkProductsCtrl', ["$scope", "$timeout", "$http", 
 			data: productsToSubmit
 		})
 		.success(function(data){
-			if (angular.toJson($scope.products) == angular.toJson(data)){
+			if (angular.toJson($scope.products) == angular.toJson(data["products"])){
 				$scope.resetProducts(data);
 				$scope.displaySuccess();
 			}
